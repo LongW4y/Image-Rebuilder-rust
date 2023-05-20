@@ -1,5 +1,6 @@
 use image::{DynamicImage, GenericImageView, GenericImage};
 use rand::Rng;
+use std::env;
 
 // Check if file exists
 fn file_exists(path: &str) -> bool {
@@ -104,7 +105,8 @@ fn calculate_average_color(pixels: &Vec<(u8, u8, u8, u8)>) -> (u8, u8, u8, u8) {
    
    // Color each pixel in the output image with the closest pixel in the input image
    // the u32 in input_pixels is the x & y coordinates of the pixel in the input image
-   fn color_output_image(path: &str) {
+   fn color_output_image(config: Config) {
+    let path = config.input;
     // Read input file
     let img = read_image(&path);
     // Create a black image of the same dimensions as the input image and return it, name it ${source_file}_output.png
@@ -172,28 +174,124 @@ fn calculate_average_color(pixels: &Vec<(u8, u8, u8, u8)>) -> (u8, u8, u8, u8) {
     
 }
 
-   // Main
-   fn main() {
-    // Get input file path
-    let input = read_input("Input file path:");
-    // Start the timer
-    let start = std::time::Instant::now();
-    // Check if input file exists
-    if !file_exists(&input) {
-    println!("Input file does not exist");
-    return;
+// Define a struct to store the input file path, the output file path and the number of cores
+struct Config {
+    input: String,
+    output: String,
+    cores: usize,
+}
+
+// A function that handles command line arguments and returns a Config struct
+fn parse_args() -> Option<Config> {
+    // Get command line arguments using env module
+    let args: Vec<String> = env::args().collect();
+
+    if args.len() == 1 {
+        println!("Please provide an input file path or use --help flag for more information");
+        return None;
     }
-    // Check if input file is an image
-    if !is_image(&input) {
-    println!("Input file is not an image");
-    return;
+
+    if args.len() > 7 {
+        println!("Too many arguments provided");
+        return None;
     }
-   
-    color_output_image(&input);
-   
-    // Stop the timer
-    let duration = start.elapsed();
-    // Print the time it took to run the program
-    println!("Time elapsed: {:?}", duration);
-   }
-   
+
+    // Use variables to store the input file path, the output file path and the number of cores to use
+    let mut input = String::new();
+    let mut output = String::new();
+    let mut cores = 1; // Default value is 1
+
+    // Use a loop to parse the arguments
+    for i in 1..args.len() {
+        match args[i].as_str() {
+            "--help" => {
+                println!("This program takes an input image and creates an output image with randomly generated colors.\nUsage:\n\tcargo run --release --file <input_file_path> --output <output_file_path> --cpu <number_of_cores>\nExample:\n\tcargo run --release --file images/test.png --output images/output.png --cpu 4");
+                return None;
+            }
+            "--file" => {
+                // Check if there is another argument after --file
+                if i + 1 < args.len() {
+                    // Assign the next argument to the input variable
+                    input = args[i + 1].clone();
+                } else {
+                    // If not, print an error message and return
+                    println!("Please provide an input file path after --file flag");
+                    return None;
+                }
+            }
+            "--output" => {
+                // Check if there is another argument after --output
+                if i + 1 < args.len() {
+                    // Assign the next argument to the output variable
+                    output = args[i + 1].clone();
+                } else {
+                    // If not, print an error message and return
+                    println!("Please provide an output file path after --output flag");
+                    return None;
+                }
+            }
+            "--cpu" => {
+                // Check if there is another argument after --cpu
+                if i + 1 < args.len() {
+                    // Parse the next argument as a usize and assign it to the cores variable
+                    cores = match args[i + 1].parse::<usize>() {
+                        Ok(n) => n,
+                        Err(_) => {
+                            // If the argument is not a valid usize, print an error message and return
+                            println!("Please provide a valid number of cores after --cpu flag");
+                            return None;
+                        }
+                    };
+                } else {
+                    // If not, print an error message and return
+                    println!("Please provide a number of cores after --cpu flag");
+                    return None;
+                }
+            }
+            _ => {
+                // Ignore any other arguments
+            }
+        }
+    }
+
+    // Check if the input file path is empty
+    if input.is_empty() {
+        println!("Please provide an input file path using --file flag");
+        return None;
+    }
+
+    // Check if the output file path is empty
+    if output.is_empty() {
+        println!("Please provide an output file path using --output flag");
+        return None;
+    }
+
+    // Return a Config struct with the input file path, the output file path and the number of cores as fields
+    Some(Config {input, output, cores})
+}
+
+// Main function that calls the parse_args function and runs the color_output_image function
+
+fn main() {
+
+    // Call the parse_args function and get a Config struct
+    let config = match parse_args() {
+        Some(c) => c,
+        None => return,
+    };
+
+    // Check if the input file exists
+    if !file_exists(&config.input) {
+        println!("Input file does not exist");
+        return;
+    }
+
+    // Check if the input file is an image
+    if !is_image(&config.input) {
+        println!("Input file is not an image");
+        return;
+    }
+
+    color_output_image(config);
+
+}
