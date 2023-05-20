@@ -3,7 +3,7 @@
 #![allow(unused_imports)]
 
 use image::{DynamicImage, GenericImageView, GenericImage};
-use rand::random;
+use rand::{random, Rng};
 use time::Duration;
 
 // Check if file exists
@@ -48,23 +48,33 @@ fn create_black_image(path: &str, width: u32, height: u32) {
 
 // Generate N amount of random RGBA pixels
 fn generate_random_pixels(n: u32) -> Vec<(u8, u8, u8, u8)> {
-    (0..n).map(|_| {
-        (
-            random::<u8>(), // R
-            random::<u8>(), // G
-            random::<u8>(), // B
-            random::<u8>(), // A
-        )
-    }).collect::<Vec<(u8, u8, u8, u8)>>()
-}
+    // Pre-allocate the vector with the desired capacity
+    let mut pixels = Vec::with_capacity(n as usize);
+    // Use a single random number generator instead of calling random() multiple times
+    let mut rng = rand::thread_rng();
+    for _ in 0..n {
+    // Generate a random u32 and split it into four bytes
+    let rgba = rng.gen::<u32>();
+    let r = (rgba >> 24) as u8;
+    let g = (rgba >> 16) as u8;
+    let b = (rgba >> 8) as u8;
+    let a = rgba as u8;
+    // Push the pixel to the vector
+    pixels.push((r, g, b, a));
+    }
+    pixels
+   }
+   
 
 // Calculate color distance between two pixels, as the sum of four differences squared
 fn calculate_distance(p1: (u8, u8, u8, u8), p2: (u8, u8, u8, u8)) -> u32 {
-    let r = (p1.0 ^ p2.0).pow(2);
-    let g = (p1.1 ^ p2.1).pow(2);
-    let b = (p1.2 ^ p2.2).pow(2);
-    let a = (p1.3 ^ p2.3).pow(2);
-    (r + g + b + a) as u32
+    // Use bitwise operations instead of pow(2) for faster computation
+    let r = (p1.0 ^ p2.0) * (p1.0 ^ p2.0);
+    let g = (p1.1 ^ p2.1) * (p1.1 ^ p2.1);
+    let b = (p1.2 ^ p2.2) * (p1.2 ^ p2.2);
+    let a = (p1.3 ^ p2.3) * (p1.3 ^ p2.3);
+    // Use wrapping_add to avoid overflow checks
+    (r.wrapping_add(g).wrapping_add(b).wrapping_add(a)) as u32
 }
 
 // Find the closest pixel to a givel pixel out of a vector of pixels
@@ -90,37 +100,31 @@ fn find_closest_pixel(pixel: (u8, u8, u8, u8), pixels: &Vec<(u8, u8, u8, u8)>) -
 
 // Read image and return a vector of pixels and their coordinates
 fn read_image_pixels(path: &str) -> Vec<((u32, u32), (u8, u8, u8, u8))> {
-    let mut pixels = Vec::new();
-    // Read image
-    let img = read_image(path);
-    // Get image dimensions
-    let width = img.width();
-    let height = img.height();
-    // Read each pixel
-    for x in 0..width {
-        for y in 0..height {
-            let pixel = img.get_pixel(x, y);
-            pixels.push(((x, y), (pixel.0[0], pixel.0[1], pixel.0[2], pixel.0[3])));
-        }
-    }
-    pixels
+ // Read image
+ let img = read_image(path);
+ // Get image dimensions
+ let (width, height) = img.dimensions();
+ // Create a vector with enough capacity to avoid reallocations
+ let mut pixels = Vec::with_capacity((width * height) as usize);
+ // Read each pixel
+ for (x, y, pixel) in img.pixels() {
+ pixels.push(((x, y), (pixel.0[0], pixel.0[1], pixel.0[2], pixel.0[3])));
+ }
+ pixels
 }
+
 
 // Calculate the average color of a vector of pixels
 fn calculate_average_color(pixels: &Vec<(u8, u8, u8, u8)>) -> (u8, u8, u8, u8) {
-    let mut r = 0;
-    let mut g = 0;
-    let mut b = 0;
-    let mut a = 0;
-    for p in pixels {
-        r += p.0;
-        g += p.1;
-        b += p.2;
-        a += p.3;
-    }
-    let n = pixels.len() as u8;
-    (r / n, g / n, b / n, a / n)
+ // Use iterators and fold to avoid mutable variables and looping
+ let (r, g, b, a) = pixels.iter().fold((0u32, 0u32, 0u32, 0u32), |(r, g, b, a), p| {
+  (r + p.0 as u32, g + p.1 as u32, b + p.2 as u32, a + p.3 as u32)
+ });
+ let n = pixels.len() as u32;
+ // Use saturating_div to avoid overflow and cast to u8
+ ((r.saturating_div(n)) as u8, (g.saturating_div(n)) as u8, (b.saturating_div(n)) as u8, (a.saturating_div(n)) as u8)
 }
+
 
 // Color each pixel in the output image with the closest pixel in the input image
 // the u32 in input_pixels is the x & y coordinates of the pixel in the input image
