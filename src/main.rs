@@ -1,10 +1,5 @@
-#![allow(dead_code)]
-#![allow(unused_variables)]
-#![allow(unused_imports)]
-
 use image::{DynamicImage, GenericImageView, GenericImage};
-use rand::{random, Rng};
-use time::Duration;
+use rand::Rng;
 
 // Check if file exists
 fn file_exists(path: &str) -> bool {
@@ -96,31 +91,15 @@ fn find_closest_pixel(pixel: (u8, u8, u8, u8), pixels: &Vec<(u8, u8, u8, u8)>) -
     [closest_pixel.0, closest_pixel.1, closest_pixel.2, closest_pixel.3]
 }
 
-// Read image and return a vector of pixels and their coordinates
-fn read_image_pixels(path: &str) -> Vec<((u32, u32), (u8, u8, u8, u8))> {
- // Read image
- let img = read_image(path);
- // Get image dimensions
- let (width, height) = img.dimensions();
- // Create a vector with enough capacity to avoid reallocations
- let mut pixels = Vec::with_capacity((width * height) as usize);
- // Read each pixel
- for (x, y, pixel) in img.pixels() {
- pixels.push(((x, y), (pixel.0[0], pixel.0[1], pixel.0[2], pixel.0[3])));
- }
- pixels
-}
-
-
 // Calculate the average color of a vector of pixels
 fn calculate_average_color(pixels: &Vec<(u8, u8, u8, u8)>) -> (u8, u8, u8, u8) {
- // Use iterators and fold to avoid mutable variables and looping
- let (r, g, b, a) = pixels.iter().fold((0u32, 0u32, 0u32, 0u32), |(r, g, b, a), p| {
-  (r + p.0 as u32, g + p.1 as u32, b + p.2 as u32, a + p.3 as u32)
- });
- let n = pixels.len() as u32;
- // Use saturating_div to avoid overflow and cast to u8
- ((r.saturating_div(n)) as u8, (g.saturating_div(n)) as u8, (b.saturating_div(n)) as u8, (a.saturating_div(n)) as u8)
+    // Use iterators and fold to avoid mutable variables and looping
+    let (r, g, b, a) = pixels.iter().fold((0u32, 0u32, 0u32, 0u32), |(r, g, b, a), p| {
+    (r + p.0 as u32, g + p.1 as u32, b + p.2 as u32, a + p.3 as u32)
+    });
+    let n = pixels.len() as u32;
+    // Use saturating_div to avoid overflow and cast to u8
+    ((r.saturating_div(n)) as u8, (g.saturating_div(n)) as u8, (b.saturating_div(n)) as u8, (a.saturating_div(n)) as u8)
 }
 
 
@@ -146,8 +125,7 @@ fn color_output_image(path: &str) {
     // and color the pixel in the output image with the closest pixel at the same coordinates
     let mut i = 0;
     let n = 2; // final image will be made of squares of n x n pixels
-    // Read the input image pixels
-    let input_pixels = read_image_pixels(&path);
+
     // Use a hash map to store the closest pixels for each average color to avoid repeated calculations
     use std::collections::HashMap;
     let mut cache = HashMap::new();
@@ -182,7 +160,7 @@ fn color_output_image(path: &str) {
     }
     // Print progress as N^2
     i += n * n;
-    if i % 100 == 0 {
+    if i % 1000 == 0 {
         println!("Progress: {} / {}", i, img.width() * img.height());
     }
     }
