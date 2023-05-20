@@ -3,62 +3,62 @@ use rand::Rng;
 
 // Check if file exists
 fn file_exists(path: &str) -> bool {
- std::path::Path::new(path).exists()
+    std::path::Path::new(path).exists()
 }
 
 // Check if file is of extension .png, .jpg, .jpeg
 fn is_image(path: &str) -> bool {
- let ext = std::path::Path::new(path)
- .extension()
- .unwrap()
- .to_str()
- .unwrap()
- .to_lowercase();
- ext == "png" || ext == "jpg" || ext == "jpeg"
+    let ext = std::path::Path::new(path)
+    .extension()
+    .unwrap()
+    .to_str()
+    .unwrap()
+    .to_lowercase();
+    ext == "png" || ext == "jpg" || ext == "jpeg"
 }
 
 // Read file
 fn read_image(path: &str) -> image::DynamicImage {
- image::open(path).unwrap()
+    image::open(path).unwrap()
 }
 
 // Write file
 fn write_image(path: &str, img: &DynamicImage) {
- img.save(path).unwrap();
+    img.save(path).unwrap();
 }
 
 // Read user input informing the user of what to input
 fn read_input(s: &str) -> String {
- println!("{}", s);
- let mut input = String::new();
- std::io::stdin().read_line(&mut input).unwrap();
- input.trim().to_string()
+    println!("{}", s);
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input).unwrap();
+    input.trim().to_string()
 }
 
 // Create a black image of dimensions width x height and save it to path
 fn create_black_image(path: &str, width: u32, height: u32) {
- let img = image::DynamicImage::new_rgb8(width, height);
- write_image(path, &img);
+    let img = image::DynamicImage::new_rgb8(width, height);
+    write_image(path, &img);
 }
 
 // Generate N amount of random RGBA pixels
 fn generate_random_pixels(n: u32) -> Vec<(u8, u8, u8, u8)> {
- // Pre-allocate the vector with the desired capacity
- let mut pixels = Vec::with_capacity(n as usize);
- // Use a single random number generator instead of calling random() multiple times
- let mut rng = rand::thread_rng();
- for _ in 0..n {
- // Generate a random u32 and split it into four bytes
- let rgba = rng.gen::<u32>();
- let r = (rgba >> 24) as u8;
- let g = (rgba >> 16) as u8;
- let b = (rgba >> 8) as u8;
- let a = rgba as u8;
- // Push the pixel to the vector
- pixels.push((r, g, b, a));
- }
- pixels
- }
+    // Pre-allocate the vector with the desired capacity
+    let mut pixels = Vec::with_capacity(n as usize);
+    // Use a single random number generator instead of calling random() multiple times
+    let mut rng = rand::thread_rng();
+    for _ in 0..n {
+    // Generate a random u32 and split it into four bytes
+    let rgba = rng.gen::<u32>();
+    let r = (rgba >> 24) as u8;
+    let g = (rgba >> 16) as u8;
+    let b = (rgba >> 8) as u8;
+    let a = rgba as u8;
+    // Push the pixel to the vector
+    pixels.push((r, g, b, a));
+    }
+    pixels
+}
 
 // Calculate color distance between two pixels, as the Euclidean distance in RGBA space
 fn calculate_distance(p1: (u8, u8, u8, u8), p2: (u8, u8, u8, u8)) -> u32 {
@@ -170,9 +170,8 @@ fn calculate_average_color(pixels: &Vec<(u8, u8, u8, u8)>) -> (u8, u8, u8, u8) {
     
     println!("Done");
     
-    }
-   
-   
+}
+
    // Main
    fn main() {
     // Get input file path
